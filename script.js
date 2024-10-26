@@ -65,22 +65,21 @@ FORM.addEventListener("submit", function (e) {
         const igv_amount = xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue
         const ruc = Array.from(xmlFile.getElementsByTagName("cbc:ID")).find(id => id.getAttribute("schemeName") === "Documento de Identidad")?.childNodes[0]?.nodeValue
         let validate_detraction = false
-        let validate_retention = false
+        let validate_retention = true
         let have_retention = false
 
         if (igv_amount) {
             const igv_amount_double = parseFloat(igv_amount);
             console.log(igv_amount_double)
             if (igv_amount_double > 700) {
-                validate_detraction = true
-            } else {
-                validate_retention = true
+                validate_detraction = true // tiene detraccion y no tiene retencion
+                validate_retention = false
             }
         }
 
         // evaluamos detraccion
         if (validate_detraction) {
-            validate_retention = true
+            console.log("Evaluamos detraccion")
         }
 
         // evaluamos retencion
