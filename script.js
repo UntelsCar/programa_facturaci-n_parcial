@@ -164,6 +164,9 @@ FORM.addEventListener("submit", function (e) {
             baseImponibleGravadas: xmlFile.getElementsByTagName("cbc:LineExtensionAmount")[0]?.childNodes[0]?.nodeValue || "-",
             montoIGV: xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue || "-",
             otrosTributosCargos: xmlFile.getElementsByTagName("cbc:ChargeTotalAmount")[0]?.childNodes[0]?.nodeValue || "-",
+            impuestoICBPER: xmlFile.getElementsByTagName("cbc:TaxAmount")[3]?.childNodes[0]?.nodeValue || "-",
+            baseImponibleNoDerechoCreditoFiscal: xmlFile.getElementsByTagName("cbc:TaxableAmount")[1]?.childNodes[0]?.nodeValue || "-",
+            valorAdquisicionesNoGravadas: xmlFile.getElementsByTagName("cbc:LineExtensionAmount")[2]?.childNodes[0]?.nodeValue || "-",
 
             //------------------------------------------------------
             importe_total: monto_total || "-",
