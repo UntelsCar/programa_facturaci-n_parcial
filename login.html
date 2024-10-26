@@ -24,16 +24,17 @@
 </body>
 <script> 
     function validateLogin() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const errorMessage = document.getElementById("errorMessage");
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const errorMessage = document.getElementById("errorMessage");
 
-    if (username === "admin" && password === "1234") {
-        window.location.href = "index.html";
-    } else {
-
-        errorMessage.textContent = "usuario o contraseña invalidos";
+        if (username === "admin" && password === "1234") {
+            // Almacenar estado de autenticación
+            localStorage.setItem("isAuthenticated", "true");
+            window.location.href = "index.html";
+        } else {
+            errorMessage.textContent = "usuario o contraseña invalidos";
+        }
     }
-}
 </script>
 </html>
