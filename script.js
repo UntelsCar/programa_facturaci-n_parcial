@@ -34,7 +34,7 @@ FORM.addEventListener("submit", function (e) {
         let [Serie_comp, Número_comp] = cbcId.split('-');
 
         let cbcId_M = xmlFile.getElementsByTagName("cac:InvoiceDocumentReference")[0]?.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "-";
-        let [Serie_comp_m, Número_comp_m] = cbcId.split('-');
+        let [Serie_comp_m, Número_comp_m] = cbcId_M.split('-');
 
         // Extraer fechas del XML en formato YYYY-MM-DD
         let issueDateStr = xmlFile.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "-";
@@ -66,12 +66,15 @@ FORM.addEventListener("submit", function (e) {
         
         // Detraccion y Retencion
         const monto_total = xmlFile.getElementsByTagName("cac:LegalMonetaryTotal")[0]?.getElementsByTagName("cbc:PayableAmount")[0]?.childNodes[0]?.nodeValue
-        //
+        const mont_igv = xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue
         const ruc = Array.from(xmlFile.getElementsByTagName("cbc:ID")).find(id => id.getAttribute("schemeName") === "Documento de Identidad")?.childNodes[0]?.nodeValue
         let validate_detraction = false
-        let validate_retention = true
+        let validate_retention = false
         let have_retention = false
         let have_detraccion = false
+        const mont_igv_dob = parseInt(mont_igv);
+
+        if (mont_igv_dob >0) {
 
         if (monto_total) {
             const igv_amount_double = parseFloat(monto_total);
@@ -80,7 +83,7 @@ FORM.addEventListener("submit", function (e) {
                 validate_detraction = true // tiene detraccion y no tiene retencion
                 validate_retention = false
             }
-        }
+        }}
 
         // evaluamos detraccion
         if (validate_detraction) {
@@ -162,7 +165,7 @@ FORM.addEventListener("submit", function (e) {
             numeroDocProveedor: ruc || "-",
             razonSocialProveedor: xmlFile.getElementsByTagName("cbc:RegistrationName")[0]?.childNodes[0]?.nodeValue || "-",
             baseImponibleGravadas: xmlFile.getElementsByTagName("cbc:LineExtensionAmount")[0]?.childNodes[0]?.nodeValue || "-",
-            montoIGV: xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue || "-",
+            montoIGV: mont_igv || "-",
             otrosTributosCargos: xmlFile.getElementsByTagName("cbc:ChargeTotalAmount")[0]?.childNodes[0]?.nodeValue || "-",
             impuestoICBPER: xmlFile.getElementsByTagName("cbc:TaxAmount")[3]?.childNodes[0]?.nodeValue || "-",
             baseImponibleNoDerechoCreditoFiscal: xmlFile.getElementsByTagName("cbc:TaxableAmount")[1]?.childNodes[0]?.nodeValue || "-",
