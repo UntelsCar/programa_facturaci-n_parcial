@@ -62,14 +62,16 @@ FORM.addEventListener("submit", function (e) {
         let periodDifference = `${String(yearDiff).padStart(4, '0')}-${String(monthDiff).padStart(2, '0')}-${String(dayDiff).padStart(2, '0')}`;
         
         // Detraccion y Retencion
-        const igv_amount = xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue
+        const monto_total = xmlFile.getElementsByTagName("cac:LegalMonetaryTotal")[0]?.getElementsByTagName("cbc:PayableAmount")[0]?.childNodes[0]?.nodeValue
+        //
         const ruc = Array.from(xmlFile.getElementsByTagName("cbc:ID")).find(id => id.getAttribute("schemeName") === "Documento de Identidad")?.childNodes[0]?.nodeValue
         let validate_detraction = false
         let validate_retention = true
         let have_retention = false
+        let have_detraccion = false
 
-        if (igv_amount) {
-            const igv_amount_double = parseFloat(igv_amount);
+        if (monto_total) {
+            const igv_amount_double = parseFloat(monto_total);
             console.log(igv_amount_double)
             if (igv_amount_double > 700) {
                 validate_detraction = true // tiene detraccion y no tiene retencion
@@ -80,11 +82,43 @@ FORM.addEventListener("submit", function (e) {
         // evaluamos detraccion
         if (validate_detraction) {
             console.log("Evaluamos detraccion")
+            const keywords = [
+                            "verificacion","planos","instalaciones","digitalizacion","planos","servicio","intermediacion laboral", "arrendamiento", "mantenimiento", "reparacion", "movimiento",
+                            "comision", "fabricacion", "transporte", "contratos", "hidrobiológicos", "maiz amarillo",
+                            "caña de azúcar", "arena y piedra", "residuos", "subproductos", "desechos", "recortes", 
+                            "desperdicios", "bienes gravados con el igv por renuncia a la exoneración", 
+                            "carnes y despojos comestibles", "aceite de pescado", 
+                            "harina","polvo","pellets de pescado"," crustáceos", "moluscos", 
+                            "leche", "madera", "oro gravado con el igv", "paprika", 
+                            "minerales metálicos no auríferos", "plomo"
+                        ];
+            let items = xmlFile.getElementsByTagName("cac:Item");
+            let hasDetractionKeyword = false;
+            
+            for (let i = 0; i < items.length; i++) {
+                let description = items[i].getElementsByTagName("cbc:Description")[0]?.childNodes[0]?.nodeValue || "";
+                // Convertir la descripción a minúsculas
+                description = description.replace(/[.,]/g, ""); // Elimina puntos y comas
+                description = description.toLowerCase(); 
+                console.log("Descripción:", description); // Muestra la descripción procesada
+                for (let keyword of keywords) {
+                    // Convertir la palabra clave a minúsculas
+                    if (description.includes(keyword.toLowerCase())) {
+                        hasDetractionKeyword = true;
+                        break; // Salir del bucle si se encuentra una palabra clave
+                    }
+                }
+                if (hasDetractionKeyword){
+                    have_detraccion = true; 
+                    break;
+                } else { validate_retention = true } // Salir si se encontró una palabra clave
+            }
+
         }
 
         // evaluamos retencion
         if (validate_retention) {
-            const token = "Q3nvGJJti5GhpQUTfkFD6lS7O8iaAazQn0dM0MpkGR6IhtCtFiSd8SXskozn";
+            const token = "eRkC0pzcERu4dngB8g6cEfgb8mIp0519GG5S4K85kL4ioKhybAdEgbGdboi1";
             if (ruc) {
                 try {
                     const response = await fetch('https://api.migo.pe/api/v1/ruc/agentes-retencion', {
@@ -125,11 +159,11 @@ FORM.addEventListener("submit", function (e) {
             numeroDocProveedor: ruc || "-",
             razonSocialProveedor: xmlFile.getElementsByTagName("cbc:RegistrationName")[0]?.childNodes[0]?.nodeValue || "-",
             baseImponibleGravadas: xmlFile.getElementsByTagName("cbc:LineExtensionAmount")[0]?.childNodes[0]?.nodeValue || "-",
-            montoIGV: igv_amount || "-",
+            montoIGV: xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue || "-",
             otrosTributosCargos: xmlFile.getElementsByTagName("cbc:ChargeTotalAmount")[0]?.childNodes[0]?.nodeValue || "-",
 
             //------------------------------------------------------
-            importe_total: xmlFile.getElementsByTagName("cac:LegalMonetaryTotal")[0]?.getElementsByTagName("cbc:PayableAmount")[0]?.childNodes[0]?.nodeValue || "-",
+            importe_total: monto_total || "-",
             cod_moneda: xmlFile.getElementsByTagName("cbc:DocumentCurrencyCode")[0]?.childNodes[0]?.nodeValue || "-",
             tipo_cambio: xmlFile.getElementsByTagName("cac:ExchangeRate")[0]?.getElementsByTagName("cbc:CalculationRate")[0]?.childNodes[0]?.nodeValue || "-",
             fecha_emision_comprobante_modificado: xmlFile.getElementsByTagName("cac:BillingReference")[0]?.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "-",
@@ -138,8 +172,8 @@ FORM.addEventListener("submit", function (e) {
             num_comprobante_modificado: xmlFile.getElementsByTagName("cac:InvoiceDocumentReference")[0]?.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "-",
             fecha_emision_detraccion: xmlFile.getElementsByTagName("sac:SUNATRetentionInformation")[0]?.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "-",
             //------------------------------------------------------
-            
-            deposit_certificate_n: xmlFile.getElementsByTagName("cac:PayeeFinancialAccount")[0]?.childNodes[0]?.childNodes[0]?.nodeValue || "No Sujeto a Detraccion",
+            deposit_certificate_n: (have_detraccion)? "Es sujeto a detracion" : "No Sujeto a Detraccion",
+            //deposit_certificate_n: xmlFile.getElementsByTagName("cac:PayeeFinancialAccount")[0]?.childNodes[0]?.childNodes[0]?.nodeValue || "No Sujeto a Detraccion",
             hasRetention: (have_retention) ? "Es sujeto a Retencion" : "No es sujeto a Retencion",
 
         //     reference: xmlFile.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "null",
@@ -173,8 +207,8 @@ FORM.addEventListener("submit", function (e) {
 
 
         };
-
-        // // Verificar condiciones para detracción o retención
+        //DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+        // Verificar condiciones para detracción o retención
         // let igvAmount = Array.from(xmlFile.getElementsByTagName("cbc:Name")).some(nameNode => nameNode.childNodes[0]?.nodeValue === "IGV");
         // if (data.payableAmount > 700 && igvAmount) {
         //     // Verificar si alguna descripción contiene las palabras clave
@@ -213,7 +247,7 @@ FORM.addEventListener("submit", function (e) {
         //         data.status = "sujeto a retención";
         //     }
         // }
-
+        //DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
         // Insertar los datos en la tabla
         let cellIndex = 0;
         let row = TABLE.insertRow(1);
