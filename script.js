@@ -34,7 +34,7 @@ FORM.addEventListener("submit", function (e) {
         let [Serie_comp, Número_comp] = cbcId.split('-');
 
         let cbcId_M = xmlFile.getElementsByTagName("cac:InvoiceDocumentReference")[0]?.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "-";
-        let [Serie_comp_m, Número_comp_m] = cbcId.split('-');
+        let [Serie_comp_m, Número_comp_m] = cbcId_M.split('-');
 
         // Extraer fechas del XML en formato YYYY-MM-DD
         let issueDateStr = xmlFile.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "-";
