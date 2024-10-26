@@ -30,12 +30,15 @@ FORM.addEventListener("submit", function (e) {
         let currentDate = new Date();
         currentDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
 
-        let cbcId = xmlFile.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "null";
+        let cbcId = xmlFile.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "-";
         let [Serie_comp, Número_comp] = cbcId.split('-');
 
+        let cbcId_M = xmlFile.getElementsByTagName("cac:InvoiceDocumentReference")[0]?.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "-";
+        let [Serie_comp_m, Número_comp_m] = cbcId.split('-');
+
         // Extraer fechas del XML en formato YYYY-MM-DD
-        let issueDateStr = xmlFile.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "null";
-        let dueDateStr = xmlFile.getElementsByTagName("cbc:PaymentDueDate")[0]?.childNodes[0]?.nodeValue || "null";
+        let issueDateStr = xmlFile.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "-";
+        let dueDateStr = xmlFile.getElementsByTagName("cbc:PaymentDueDate")[0]?.childNodes[0]?.nodeValue || "-";
 
         // Descomponer las fechas en año, mes y día
         let [issueYear, issueMonth, issueDay] = issueDateStr.split('-').map(Number);
@@ -168,9 +171,10 @@ FORM.addEventListener("submit", function (e) {
             tipo_cambio: xmlFile.getElementsByTagName("cac:ExchangeRate")[0]?.getElementsByTagName("cbc:CalculationRate")[0]?.childNodes[0]?.nodeValue || "-",
             fecha_emision_comprobante_modificado: xmlFile.getElementsByTagName("cac:BillingReference")[0]?.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "-",
             tipo_comprobante_modificado: xmlFile.getElementsByTagName("cac:InvoiceDocumentReference")[0]?.getElementsByTagName("cbc:DocumentTypeCode")[0]?.childNodes[0]?.nodeValue || "-",
-            num_serie_comprobante_modificado: xmlFile.getElementsByTagName("cac:InvoiceDocumentReference")[0]?.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "-",
-            num_comprobante_modificado: xmlFile.getElementsByTagName("cac:InvoiceDocumentReference")[0]?.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "-",
+            num_serie_comprobante_modificado: Serie_comp_m || "-", 
+            num_comprobante_modificado: Número_comp_m || "-",
             fecha_emision_detraccion: xmlFile.getElementsByTagName("sac:SUNATRetentionInformation")[0]?.getElementsByTagName("cbc:IssueDate")[0]?.childNodes[0]?.nodeValue || "-",
+            cod_DUA_DSI:xmlFile.getElementsByTagName("sac:AdditionalInformation")[0]?.getElementsByTagName("cbc:Value")[0]?.childNodes[0]?.nodeValue || "-",
             //------------------------------------------------------
             deposit_certificate_n: (have_detraccion)? "Es sujeto a detracion" : "No Sujeto a Detraccion",
             //deposit_certificate_n: xmlFile.getElementsByTagName("cac:PayeeFinancialAccount")[0]?.childNodes[0]?.childNodes[0]?.nodeValue || "No Sujeto a Detraccion",
@@ -266,7 +270,7 @@ BTN.addEventListener("click", function(){
     let rowsQuantity = TABLE.rows.length;
     if (rowsQuantity > 1) for (let i = 0; i < rowsQuantity; i++) {
         let rowTemp = [];
-        for (let j = 0; j < 23; j++) {
+        for (let j = 0; j < 26; j++) {
             rowTemp.push(TABLE.rows[i].cells[j].innerHTML);
         }
         result.push(rowTemp);
