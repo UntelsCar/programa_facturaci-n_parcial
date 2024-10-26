@@ -61,8 +61,56 @@ FORM.addEventListener("submit", function (e) {
         // Formatear la diferencia en el formato "YYYY-MM-DD"
         let periodDifference = `${String(yearDiff).padStart(4, '0')}-${String(monthDiff).padStart(2, '0')}-${String(dayDiff).padStart(2, '0')}`;
         
-        // cargar empresas con retencion
-        let retentionRucs = await loadRetentionFile('./AgenRet_TXT.txt');
+        // Detraccion y Retencion
+        const igv_amount = xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue
+        const ruc = Array.from(xmlFile.getElementsByTagName("cbc:ID")).find(id => id.getAttribute("schemeName") === "Documento de Identidad")?.childNodes[0]?.nodeValue
+        let validate_detraction = false
+        let validate_retention = false
+        let have_retention = false
+
+        if (igv_amount) {
+            const igv_amount_double = parseFloat(igv_amount);
+            console.log(igv_amount_double)
+            if (igv_amount_double > 700) {
+                validate_detraction = true
+            } else {
+                validate_retention = true
+            }
+        }
+
+        // evaluamos detraccion
+        if (validate_detraction) {
+            validate_retention = true
+        }
+
+        // evaluamos retencion
+        if (validate_retention) {
+            const token = "Q3nvGJJti5GhpQUTfkFD6lS7O8iaAazQn0dM0MpkGR6IhtCtFiSd8SXskozn";
+            if (ruc) {
+                try {
+                    const response = await fetch('https://api.migo.pe/api/v1/ruc/agentes-retencion', {
+                        method: 'POST',
+                        headers: {
+                        "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                        "token": token,
+                        "ruc": ruc
+                        }),
+                    });
+                    const dataRetention = await response.json();
+                    console.log(dataRetention)
+                    if (dataRetention.success) {
+                        have_retention = true
+                    }
+
+                } catch (error) {
+                    console.log("Ocurrio un error consultando al servicio de retencion.")
+                }
+            } else {
+                console.log("No tiene RUC...")
+            }
+        }
 
         let data = {
             Periodo: periodDifference,
@@ -75,10 +123,10 @@ FORM.addEventListener("submit", function (e) {
             Número_comp: Número_comp || "-",
             //------------------------------------------------------
             tipoDocProveedor: Array.from(xmlFile.getElementsByTagName("cbc:ID")).find(id => id.getAttribute("schemeName") === "Documento de Identidad")?.getAttribute("schemeID") || "-",
-            numeroDocProveedor: Array.from(xmlFile.getElementsByTagName("cbc:ID")).find(id => id.getAttribute("schemeName") === "Documento de Identidad")?.childNodes[0]?.nodeValue || "-",
+            numeroDocProveedor: ruc || "-",
             razonSocialProveedor: xmlFile.getElementsByTagName("cbc:RegistrationName")[0]?.childNodes[0]?.nodeValue || "-",
             baseImponibleGravadas: xmlFile.getElementsByTagName("cbc:LineExtensionAmount")[0]?.childNodes[0]?.nodeValue || "-",
-            montoIGV: xmlFile.getElementsByTagName("cbc:TaxAmount")[0]?.childNodes[0]?.nodeValue || "-",
+            montoIGV: igv_amount || "-",
             otrosTributosCargos: xmlFile.getElementsByTagName("cbc:ChargeTotalAmount")[0]?.childNodes[0]?.nodeValue || "-",
 
             //------------------------------------------------------
@@ -93,7 +141,7 @@ FORM.addEventListener("submit", function (e) {
             //------------------------------------------------------
             
             deposit_certificate_n: xmlFile.getElementsByTagName("cac:PayeeFinancialAccount")[0]?.childNodes[0]?.childNodes[0]?.nodeValue || "No Sujeto a Detraccion",
-            hasRetention: (retentionRucs.includes(xmlFile.getElementsByTagName("cbc:ID")[2]?.childNodes[0]?.nodeValue)) ? "Sujeto a Retencion" : "No Sujeto a Retencion",
+            hasRetention: (have_retention) ? "Es sujeto a Retencion" : "No es sujeto a Retencion",
 
         //     reference: xmlFile.getElementsByTagName("cbc:ID")[0]?.childNodes[0]?.nodeValue || "null",
         //     currentDate: currentDate,
@@ -210,10 +258,4 @@ BTN.addEventListener("click", function(){
     // downloadLink.href = 'data:' + 'application/vnd.ms-excel' + ', ' + TABLE.outerHTML.replace(/ /g, '%20');
     // downloadLink.download = 'data.xls';
     // downloadLink.click();
-});
-
-async function loadRetentionFile(filePath = './AgenRet_TXT.txt') {
-    const response = await fetch(filePath);
-    const text = await response.text();
-    return text.split('\n').map(line => line.split('|')[0].trim()); // Extrae solo los RUCs
-}
+}); 
